@@ -199,17 +199,19 @@ void api_set_alert_threshold(CANRxFrame *rx_msg)
 static void _update_alert_value(uint8_t alert_id)
 {
     uint16_t current_value = g_current_alert_value[alert_id];
+
     size_t i;
-    for(i = ALERT_THRESHOLDS; i > 0; i--) {
-        struct AlertThreshold * t = &g_alert_threshold[alert_id][i - 1];
-        uint16_t configured_threshold = t->threshold;
-        if (configured_threshold && current_value > configured_threshold) {
-            set_led(ALERT_OFFSET + alert_id, t->red, t->green, t->blue);
-            set_flash_config(ALERT_OFFSET + alert_id, t->flash_hz);
-            return;
+    struct AlertThreshold * t = NULL;
+    for (i = 0; i < ALERT_THRESHOLDS; i++) {
+        struct AlertThreshold * ttest = &g_alert_threshold[alert_id][i];
+        if (t == NULL || (current_value > ttest->threshold && t->threshold < ttest->threshold)) {
+            t = ttest;
         }
     }
-    set_led(ALERT_OFFSET + alert_id, 0, 0, 0);
+    if (t) {
+        set_led(ALERT_OFFSET + alert_id, t->red, t->green, t->blue);
+        set_flash_config(ALERT_OFFSET + alert_id, t->flash_hz);
+    }
 }
 
 void api_set_current_alert_value(CANRxFrame *rx_msg)
@@ -305,13 +307,12 @@ void api_set_linear_threshold(CANRxFrame *rx_msg)
 
 static struct LinearGraphThreshold * _select_linear_threshold(uint16_t value)
 {
-    struct LinearGraphThreshold * t;
     size_t i;
-    for(i = LINEAR_GRAPH_THRESHOLDS; i > 0; i--) {
-        t = &g_linear_graph_threshold[i - 1];
-        uint16_t configured_threshold = t->threshold;
-        if (configured_threshold && value > configured_threshold) {
-            break;
+    struct LinearGraphThreshold  * t = NULL;
+    for (i = 0; i < LINEAR_GRAPH_THRESHOLDS; i++) {
+        struct LinearGraphThreshold  * ttest = &g_linear_graph_threshold[i];
+        if (t == NULL || (value > ttest->threshold && t->threshold < ttest->threshold)) {
+            t = ttest;
         }
     }
     return t;
