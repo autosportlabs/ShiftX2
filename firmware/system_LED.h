@@ -25,6 +25,9 @@
 #include "ch.h"
 #include "hal.h"
 #include "settings.h"
+#include <stdlib.h>
+#define min(X,Y) ((X) < (Y) ? (X) : (Y))
+#define max(X,Y) ((X) > (Y) ? (X) : (Y))
 
 /* Total number of LEDs in device */
 #define LED_COUNT SETTINGS_LED_COUNT
@@ -57,4 +60,6 @@ void set_led_brightness(size_t index, uint8_t brightness);
 
 void led_worker(void);
 void led_flash_worker(void);
+
+void startup_demo_worker(void);
 #endif /* SYSTEM_LED_H_ */

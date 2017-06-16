@@ -25,6 +25,7 @@
 #include "ch.h"
 #include "hal.h"
 
+uint32_t get_can_base_id(void);
 void system_can_init(void);
 void can_worker(void);
 void dispatch_can_rx(CANRxFrame *rx_msg);

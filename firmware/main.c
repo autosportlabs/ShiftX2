@@ -32,6 +32,7 @@
 #define CAN_THREAD_STACK 512
 #define LED_THREAD_STACK 256
 #define LED_FLASH_THREAD_STACK 256
+#define STARTUP_DEMO_THREAD_STACK 256
 #define MAIN_THREAD_SLEEP_NORMAL_MS 10000
 #define MAIN_THREAD_SLEEP_FINE_MS   1000
 #define MAIN_THREAD_CHECK_INTERVAL_MS 100
@@ -61,6 +62,13 @@ static THD_FUNCTION(led_flash_work, arg) {
     (void)arg;
     chRegSetThreadName("LED_flas_worker");
     led_flash_worker();
+}
+
+static THD_WORKING_AREA(startup_demo_work_wa, STARTUP_DEMO_THREAD_STACK);
+static THD_FUNCTION(startup_demo_work, arg) {
+    (void)arg;
+    chRegSetThreadName("LED_flas_worker");
+    startup_demo_worker();
 }
 
 /* Watchdog configuration and initialization
@@ -103,6 +111,7 @@ int main(void)
     chThdCreateStatic(can_rx_wa, sizeof(can_rx_wa), NORMALPRIO, can_rx, NULL);
     chThdCreateStatic(led_work_wa, sizeof(led_work_wa), NORMALPRIO, led_work, NULL);
     chThdCreateStatic(led_flash_work_wa, sizeof(led_flash_work_wa), NORMALPRIO, led_flash_work, NULL);
+    chThdCreateStatic(startup_demo_work_wa, sizeof(startup_demo_work_wa), NORMALPRIO, startup_demo_work, NULL);
 
     uint32_t stats_check = 0;
     while (true) {

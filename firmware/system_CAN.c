@@ -29,124 +29,149 @@
 
 #define _LOG_PFX "SYS_CAN:     "
 
+#define CAN_WORKER_STARTUP_DELAY 500
+#define ADR1_PORT 0
+#define ADR2_PORT 4
+static uint32_t g_can_base_address = SHIFTX2_CAN_BASE_ID;
+
 /*
  * 500K baud; 36MHz clock
  */
 static const CANConfig cancfg = {
-    CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP | CAN_MCR_NART,
-    CAN_BTR_SJW(1) |
-    CAN_BTR_TS1(11) | CAN_BTR_TS2(2) | CAN_BTR_BRP(5)
+        CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP | CAN_MCR_NART,
+        CAN_BTR_SJW(1) |
+        CAN_BTR_TS1(11) | CAN_BTR_TS2(2) | CAN_BTR_BRP(5)
 };
 
-/* Initialize our CAN peripheral */
-void system_can_init(void)
+/*
+ * Initialize our CAN peripheral
+ */
+static void init_can_gpio(void)
 {
-    // Remap PA11-12 to PA9-10 for CAN
-    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
-    SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
+        // Remap PA11-12 to PA9-10 for CAN
+        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
+        SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
 
-    /* CAN RX.       */
-    palSetPadMode(GPIOA, 11, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
-    /* CAN TX.       */
-    palSetPadMode(GPIOA, 12, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
+        /* CAN RX.       */
+        palSetPadMode(GPIOA, 11, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
+        /* CAN TX.       */
+        palSetPadMode(GPIOA, 12, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
 
-    /* Activates the CAN driver */
-    canStart(&CAND1, &cancfg);
+
+        /* Disable CAN filtering for now until we can verify proper operation / settings.
+        CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0xB4000, 0x1FFFC000};
+        canSTM32SetFilters(1, 1, &shiftx2_can_filter);
+        */
+
+        /* Activates the CAN driver */
+        canStart(&CAND1, &cancfg);
+
+        /* Init CAN jumper GPIOs for determining base address offset */
+        palSetPadMode(GPIOA, ADR1_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+        palSetPadMode(GPIOA, ADR2_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
 }
 
+/*
+ * Initialize our runtime parameters
+ */
+static void init_can_operating_parameters(void)
+{
+        if (palReadPad(GPIOA, 0) == PAL_HIGH) {
+                g_can_base_address += SHIFTX2_CAN_API_RANGE;
+        }
+        log_info(_LOG_PFX "CAN base address: %u\r\n", g_can_base_address);
+}
+void system_can_init(void)
+{
+        init_can_gpio();
+}
 
 /*
  * Dispatch an incoming CAN message
  */
 void dispatch_can_rx(CANRxFrame *rx_msg)
 {
-    uint8_t can_id_type = rx_msg->IDE;
+        int32_t can_id = rx_msg->IDE == CAN_IDE_EXT ? rx_msg->EID : rx_msg->SID;
 
-    switch (can_id_type) {
-    case CAN_IDE_EXT:
-        /* Process Extended CAN IDs */
-    {
-        switch (rx_msg->EID) {
-        case API_SET_CONFIG_GROUP_1:
-            api_set_config_group_1(rx_msg);
-            break;
-        case API_SET_DISCRETE_LED:
-            api_set_discrete_led(rx_msg);
-            break;
-        case API_SET_ALERT_LED:
-            api_set_alert_led(rx_msg);
-            break;
-        case API_SET_ALERT_THRESHOLD:
-            api_set_alert_threshold(rx_msg);
-            break;
-        case API_SET_CURRENT_ALERT_VALUE:
-            api_set_current_alert_value(rx_msg);
-            break;
-        case API_CONFIG_LINEAR_GRAPH:
-            api_config_linear_graph(rx_msg);
-            break;
-        case API_SET_LINEAR_THRESHOLD:
-            api_set_linear_threshold(rx_msg);
-            break;
-        case API_SET_CURRENT_LINEAR_GRAPH_VALUE:
-            api_set_current_linear_graph_value(rx_msg);
-            break;
-        default:
-            break;
+        switch (can_id - g_can_base_address) {
+                case API_SET_CONFIG_GROUP_1:
+                        api_set_config_group_1(rx_msg);
+                        break;
+                case API_SET_DISCRETE_LED:
+                        api_set_discrete_led(rx_msg);
+                        break;
+                case API_SET_ALERT_LED:
+                        api_set_alert_led(rx_msg);
+                        break;
+                case API_SET_ALERT_THRESHOLD:
+                        api_set_alert_threshold(rx_msg);
+                        break;
+                case API_SET_CURRENT_ALERT_VALUE:
+                        api_set_current_alert_value(rx_msg);
+                        break;
+                case API_CONFIG_LINEAR_GRAPH:
+                        api_config_linear_graph(rx_msg);
+                        break;
+                case API_SET_LINEAR_THRESHOLD:
+                        api_set_linear_threshold(rx_msg);
+                        break;
+                case API_SET_CURRENT_LINEAR_GRAPH_VALUE:
+                        api_set_current_linear_graph_value(rx_msg);
+                        break;
+                default:
+                    return;
         }
-        break;
-    }
-    break;
-
-    case CAN_IDE_STD:
-        /* Process Standard CAN IDs */
-    {
-        switch (rx_msg->SID) {
-        default:
-            break;
-        }
-    }
-    break;
-    }
+        /* if we get any message then we've been provisioned */
+        set_api_is_provisioned(true);
 }
 
+uint32_t get_can_base_id(void)
+{
+        return g_can_base_address;
+}
 /* Main worker for receiving CAN messages */
 void can_worker(void)
 {
-    event_listener_t el;
-    CANRxFrame rx_msg;
-    chRegSetThreadName("CAN receiver");
-    chEvtRegister(&CAND1.rxfull_event, &el, 0);
-    while(!chThdShouldTerminateX()) {
-        if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(10)) == 0)
-            continue;
-        while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rx_msg, TIME_IMMEDIATE) == MSG_OK) {
-            /* Process message.*/
-            log_CAN_rx_message(_LOG_PFX, &rx_msg);
-            dispatch_can_rx(&rx_msg);
+        event_listener_t el;
+        CANRxFrame rx_msg;
+        chRegSetThreadName("CAN receiver");
+        chEvtRegister(&CAND1.rxfull_event, &el, 0);
+
+        chThdSleepMilliseconds(CAN_WORKER_STARTUP_DELAY);
+        init_can_operating_parameters();
+
+        while(!chThdShouldTerminateX()) {
+                if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(1000)) == 0){
+                        if (!api_is_provisoned())
+                                api_send_announcement();
+                        continue;
+                }
+                while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rx_msg, TIME_IMMEDIATE) == MSG_OK) {
+                        /* Process message.*/
+                        log_CAN_rx_message(_LOG_PFX, &rx_msg);
+                        dispatch_can_rx(&rx_msg);
+                }
         }
-    }
-    chEvtUnregister(&CAND1.rxfull_event, &el);
+        chEvtUnregister(&CAND1.rxfull_event, &el);
 }
 
 /* Prepare a CAN message with the specified CAN ID and type */
 void prepare_can_tx_message(CANTxFrame *tx_frame, uint8_t can_id_type, uint32_t can_id)
 {
-    tx_frame->IDE = can_id_type;
-    if (can_id_type == CAN_IDE_EXT) {
-        tx_frame->EID = can_id;
-    } else {
-        tx_frame->SID = can_id;
-    }
-    tx_frame->RTR = CAN_RTR_DATA;
-    tx_frame->DLC = 8;
-    tx_frame->data8[0] = 0x55;
-    tx_frame->data8[1] = 0x55;
-    tx_frame->data8[2] = 0x55;
-    tx_frame->data8[3] = 0x55;
-    tx_frame->data8[4] = 0x55;
-    tx_frame->data8[5] = 0x55;
-    tx_frame->data8[6] = 0x55;
-    tx_frame->data8[7] = 0x55;
-
+        tx_frame->IDE = can_id_type;
+        if (can_id_type == CAN_IDE_EXT) {
+            tx_frame->EID = can_id;
+        } else {
+            tx_frame->SID = can_id;
+        }
+        tx_frame->RTR = CAN_RTR_DATA;
+        tx_frame->DLC = 8;
+        tx_frame->data8[0] = 0x55;
+        tx_frame->data8[1] = 0x55;
+        tx_frame->data8[2] = 0x55;
+        tx_frame->data8[3] = 0x55;
+        tx_frame->data8[4] = 0x55;
+        tx_frame->data8[5] = 0x55;
+        tx_frame->data8[6] = 0x55;
+        tx_frame->data8[7] = 0x55;
 }

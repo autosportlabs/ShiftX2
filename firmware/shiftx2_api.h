@@ -61,25 +61,29 @@ struct LinearGraphThreshold {
 };
 
 /* API offsets */
-#define SHIFTX2_CAN_BASE_ID 744389
-#define API_ANNOUNCEMENT SHIFTX2_CAN_BASE_ID + 0
-#define API_RESET_DEVICE SHIFTX2_CAN_BASE_ID + 1
-#define API_STATS SHIFTX2_CAN_BASE_ID + 2
-#define API_SET_CONFIG_GROUP_1 SHIFTX2_CAN_BASE_ID + 3
+#define SHIFTX2_CAN_BASE_ID     744389
+#define SHIFTX2_CAN_API_RANGE   1000
+#define SHIFTX2_CAN_FILTER_ID   0xB4000
+#define SHIFTX2_CAN_FILTER_MASK 0x1FFFC000
+
+#define API_ANNOUNCEMENT 0
+#define API_RESET_DEVICE 1
+#define API_STATS SHIFTX2_2
+#define API_SET_CONFIG_GROUP_1 3
 
 /* Configuration and Runtime */
 /* Direct control messages */
-#define API_SET_DISCRETE_LED SHIFTX2_CAN_BASE_ID + 10
+#define API_SET_DISCRETE_LED 10
 
 /* Alert configuration and control messages */
-#define API_SET_ALERT_LED SHIFTX2_CAN_BASE_ID + 100
-#define API_SET_ALERT_THRESHOLD SHIFTX2_CAN_BASE_ID + 101
-#define API_SET_CURRENT_ALERT_VALUE SHIFTX2_CAN_BASE_ID + 102
+#define API_SET_ALERT_LED 100
+#define API_SET_ALERT_THRESHOLD 101
+#define API_SET_CURRENT_ALERT_VALUE 102
 
 /* Linear graph configuration and control messages */
-#define API_CONFIG_LINEAR_GRAPH SHIFTX2_CAN_BASE_ID + 200
-#define API_SET_LINEAR_THRESHOLD SHIFTX2_CAN_BASE_ID + 201
-#define API_SET_CURRENT_LINEAR_GRAPH_VALUE SHIFTX2_CAN_BASE_ID + 202
+#define API_CONFIG_LINEAR_GRAPH 200
+#define API_SET_LINEAR_THRESHOLD 201
+#define API_SET_CURRENT_LINEAR_GRAPH_VALUE 202
 
 
 void set_brightness(uint8_t brightness);
@@ -88,6 +92,8 @@ struct LedFlashConfig * get_flash_config(size_t index);
 void set_flash_config(size_t led_index, uint8_t flash_hz);
 
 /* Base API functions */
+bool api_is_provisoned(void);
+void set_api_is_provisioned(bool);
 void api_initialize(void);
 void api_set_config_group_1(CANRxFrame *rx_msg);
 void api_set_discrete_led(CANRxFrame *rx_msg);
