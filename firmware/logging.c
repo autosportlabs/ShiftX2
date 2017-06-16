@@ -20,7 +20,7 @@
  */
 #include "logging.h"
 
-static enum logging_levels logging_level = logging_level_trace;
+static enum logging_levels logging_level = logging_level_info;
 
 void set_logging_level(enum logging_levels level)
 {
@@ -46,16 +46,13 @@ static void _log_trace_can_frame(uint8_t dlc, uint8_t ide, uint32_t sid, uint32_
 }
 void log_CAN_rx_message(char* log_pfx, CANRxFrame * can_frame)
 {
-    if (get_logging_level() < logging_level_info)
-        return;
+    if (get_logging_level() < logging_level_trace)
+            return;
 
-    log_info(log_pfx);
-    log_info_b("CAN Rx");
+    log_trace(log_pfx);
+    log_trace_b("CAN Rx");
 
-    if (get_logging_level() >= logging_level_trace) {
-        _log_trace_can_frame(can_frame->DLC, can_frame->IDE, can_frame->SID, can_frame->EID, can_frame->data8);
-    }
-    log_info_b("\r\n");
+    _log_trace_can_frame(can_frame->DLC, can_frame->IDE, can_frame->SID, can_frame->EID, can_frame->data8);
 }
 
 

@@ -41,4 +41,5 @@
  * for an available CAN transmission slot */
 #define CAN_TRANSMIT_TIMEOUT 100
 
+#define NO_ACTIVITY_TIMEOUT 10000
 #endif /* SETTINGS_H_ */

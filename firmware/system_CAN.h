@@ -28,7 +28,6 @@
 uint32_t get_can_base_id(void);
 void system_can_init(void);
 void can_worker(void);
-void dispatch_can_rx(CANRxFrame *rx_msg);
 void prepare_can_tx_message(CANTxFrame *tx_frame, uint8_t can_id_type, uint32_t can_id);
 
 #endif /* CAN_H_ */

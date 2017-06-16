@@ -89,7 +89,7 @@ void system_can_init(void)
 /*
  * Dispatch an incoming CAN message
  */
-void dispatch_can_rx(CANRxFrame *rx_msg)
+static bool dispatch_can_rx(CANRxFrame *rx_msg)
 {
         int32_t can_id = rx_msg->IDE == CAN_IDE_EXT ? rx_msg->EID : rx_msg->SID;
 
@@ -119,10 +119,11 @@ void dispatch_can_rx(CANRxFrame *rx_msg)
                         api_set_current_linear_graph_value(rx_msg);
                         break;
                 default:
-                    return;
+                    return false;
         }
         /* if we get any message then we've been provisioned */
         set_api_is_provisioned(true);
+        return true;
 }
 
 uint32_t get_can_base_id(void)
@@ -140,7 +141,15 @@ void can_worker(void)
         chThdSleepMilliseconds(CAN_WORKER_STARTUP_DELAY);
         init_can_operating_parameters();
 
+        systime_t last_message = chVTGetSystemTimeX();
+
         while(!chThdShouldTerminateX()) {
+                /* check if we've timed out after we've been active */
+                if (api_is_provisoned() && chVTTimeElapsedSinceX(last_message) > MS2ST(NO_ACTIVITY_TIMEOUT)){
+                        log_info(_LOG_PFX "No activity after %u ms, resetting system\r\n", NO_ACTIVITY_TIMEOUT);
+                        reset_system();
+                }
+
                 if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(1000)) == 0){
                         if (!api_is_provisoned())
                                 api_send_announcement();
@@ -149,7 +158,9 @@ void can_worker(void)
                 while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rx_msg, TIME_IMMEDIATE) == MSG_OK) {
                         /* Process message.*/
                         log_CAN_rx_message(_LOG_PFX, &rx_msg);
-                        dispatch_can_rx(&rx_msg);
+                        if (dispatch_can_rx(&rx_msg)) {
+                                last_message = chVTGetSystemTime();
+                        }
                 }
         }
         chEvtUnregister(&CAND1.rxfull_event, &el);

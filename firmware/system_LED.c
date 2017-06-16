@@ -26,6 +26,7 @@
 
 #define _LOG_PFX "LED:     "
 
+#define DEMO_DURATION_MS 30000
 /*
  * LED buffer
  */
@@ -156,7 +157,7 @@ void startup_light_show(void)
     chThdSleepMilliseconds(1000);
 
     systime_t start = chVTGetSystemTimeX();
-    while(chVTTimeElapsedSinceX(start) < MS2ST(30000) && !api_is_provisoned()){
+    while(chVTTimeElapsedSinceX(start) < MS2ST(DEMO_DURATION_MS) && !api_is_provisoned()){
             larson_scan(255, 0, 0);
             larson_scan(0, 255, 0);
             larson_scan(0, 0, 255);
