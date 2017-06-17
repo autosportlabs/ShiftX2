@@ -24,6 +24,162 @@ static uint8_t g_current_brightness;
 
 static bool g_provisioned = false;
 
+static void _set_led_multi(size_t index, size_t length, uint8_t red, uint8_t green, uint8_t blue, uint8_t flash)
+{
+    size_t i;
+    for (i = 0; i < length; i++){
+            set_led(index + i, red, green, blue);
+            set_flash_config(index + i, flash);
+    }
+}
+
+static void _update_alert_value(uint8_t alert_id)
+{
+        uint16_t current_value = g_current_alert_value[alert_id];
+
+        size_t i;
+        struct AlertThreshold * t = NULL;
+        for (i = 0; i < ALERT_THRESHOLDS; i++) {
+                struct AlertThreshold * ttest = &g_alert_threshold[alert_id][i];
+                if (current_value >= ttest->threshold && (ttest->threshold > 0 || i == 0)) {
+                        t = ttest;
+                }
+        }
+        uint8_t red = 0, green = 0, blue = 0, flash = 0;
+        if (t) {
+                red = t->red;
+                green = t->green;
+                blue = t->blue;
+                flash = t->flash_hz;
+        }
+        set_led(ALERT_OFFSET + alert_id, red, green, blue);
+        set_flash_config(ALERT_OFFSET + alert_id, flash);
+}
+
+static struct LinearGraphThreshold * _select_linear_threshold(uint16_t value)
+{
+        size_t i;
+        struct LinearGraphThreshold  * t = NULL;
+        for (i = 0; i < LINEAR_GRAPH_THRESHOLDS; i++) {
+                struct LinearGraphThreshold  * ttest = &g_linear_graph_threshold[i];
+                if (value >= ttest->threshold && (ttest->threshold > 0 || i == 0)) {
+                        t = ttest;
+               }
+        }
+        return t;
+}
+
+static void _update_linear_graph(uint16_t value, uint16_t range, struct LinearGraphThreshold * threshold, uint8_t graph_size, uint8_t start_offset, enum linear_style lstyle, bool left_right)
+{
+        uint8_t graph_length = 0;
+
+        if (lstyle == LINEAR_STYLE_STEPPED) {
+                graph_length = threshold->segment_length;
+        }
+        else {
+                /* percentage of range */
+                uint32_t pct = (value * 100) / range;
+                graph_length = (graph_size * pct) / 100;
+        }
+
+        /* rail to max number of LEDs, for safety */
+        graph_length = graph_length > graph_size ? graph_size : graph_length;
+
+        uint32_t red = threshold->red;
+        uint32_t green = threshold->green;
+        uint32_t blue = threshold->blue;
+        uint8_t flash = threshold->flash_hz;
+
+        size_t i;
+        uint8_t led_index = 0;
+        for (i = 0; i < graph_size; i++) {
+                if (left_right) {
+                        led_index = start_offset + i;
+                }
+                else {
+                        led_index = (start_offset + graph_size - 1) - i;
+                }
+
+                if (i < graph_length) {
+                        set_led(led_index, red, green, blue);
+                }
+                else {
+                        set_led(led_index, 0, 0, 0);
+                }
+                set_flash_config(led_index, flash);
+        }
+        /* linerally dim the next LED based on the fractional amount */
+        if (lstyle == LINEAR_STYLE_SMOOTH && graph_length < graph_size) {
+                uint32_t pct = (value * 100) / range;
+                uint32_t remainder = (graph_size * pct) % 100;
+                red = red * remainder / 100;
+                green = green * remainder / 100;
+                blue = blue * remainder / 100;
+                led_index = (left_right) ?
+                        start_offset + graph_length :
+                        (start_offset + graph_size - 1) - graph_length;
+                set_led(led_index, red, green, blue);
+                set_flash_config(led_index, flash);
+        }
+}
+
+static void _update_center_graph(uint16_t value, uint16_t range, struct LinearGraphThreshold * threshold, enum linear_style lstyle)
+{
+        /* assuming odd number of LEDs */
+        uint8_t center_led = (LINEAR_GRAPH_COUNT / 2);
+        uint8_t graph_count = center_led + 1;
+        uint32_t center_value = range / 2;
+
+        size_t index;
+
+        if (value > center_value){ /* left to right rendering */
+                /*turn off LEDs left of center */
+                for (index = 0; index < center_led; index++) {
+                        set_led(index, 0, 0, 0);
+                }
+                _update_linear_graph(value - center_value, range / 2, threshold, graph_count, center_led, lstyle, true);
+        }
+        else { /* right to left rendering */
+                /* turn off LEDs right of center */
+                for (index = center_led; index < LINEAR_GRAPH_COUNT; index++) {
+                        set_led(index, 0, 0, 0);
+                }
+                _update_linear_graph(center_value - value, range / 2, threshold, graph_count, 0, lstyle, false);
+        }
+}
+
+static void _update_linear_graph_value(void)
+{
+        uint32_t low_range = g_linear_graph_config.low_range;
+        uint32_t high_range = g_linear_graph_config.high_range;
+        uint32_t range = high_range - low_range;
+
+        uint16_t current_value = g_current_linear_graph_value;
+        /* offset to zero */
+        current_value -= low_range;
+
+        enum linear_style lstyle = g_linear_graph_config.linear_style;
+        enum render_style rstyle = g_linear_graph_config.render_style;
+        bool left_right = rstyle == RENDER_STYLE_LEFT_RIGHT;
+        struct LinearGraphThreshold * threshold = _select_linear_threshold(current_value);
+        if (!threshold) {
+                /* disable graph if no threshold selected*/
+                _set_led_multi(LINEAR_GRAPH_OFFSET, LINEAR_GRAPH_COUNT, 0, 0, 0, 0);
+                return;
+        }
+        switch (rstyle){
+        case RENDER_STYLE_CENTER:
+                _update_center_graph(current_value, range, threshold, lstyle);
+                break;
+        case RENDER_STYLE_LEFT_RIGHT:
+        case RENDER_STYLE_RIGHT_LEFT:
+                _update_linear_graph(current_value, range, threshold, LINEAR_GRAPH_COUNT, LINEAR_GRAPH_OFFSET, lstyle, left_right);
+                break;
+        default:
+                log_info(_LOG_PFX "Invalid render style (%i)\r\n", rstyle);
+                break;
+        }
+}
 
 bool api_is_provisoned(void)
 {
@@ -144,11 +300,7 @@ void api_set_discrete_led(CANRxFrame *rx_msg)
         uint8_t flash = rx_msg->data8[5];
 
         log_trace(_LOG_PFX "Set Discrete LED : (%i) length(%i) rgb(%i, %i, %i) flash(%i)\r\n", index, length, red, green, blue, flash);
-        size_t i;
-        for (i = 0; i < length; i++){
-                set_led(index + i, red, green, blue);
-                set_flash_config(index + i, flash);
-        }
+        _set_led_multi(index, length, red, green, blue, flash);
 }
 
 void api_set_alert_led(CANRxFrame *rx_msg)
@@ -206,24 +358,6 @@ void api_set_alert_threshold(CANRxFrame *rx_msg)
         t->flash_hz = flash;
         log_trace(_LOG_PFX "Set Alert Threshold : alert_id(%i) threshold_id(%i) threshold(%i) rgb(%i, %i, %i) flash(%i)\r\n",
                     alert_id, threshold_id, threshold, red, green, blue, flash);
-}
-
-static void _update_alert_value(uint8_t alert_id)
-{
-        uint16_t current_value = g_current_alert_value[alert_id];
-
-        size_t i;
-        struct AlertThreshold * t = NULL;
-        for (i = 0; i < ALERT_THRESHOLDS; i++) {
-                struct AlertThreshold * ttest = &g_alert_threshold[alert_id][i];
-                if (t == NULL || (current_value > ttest->threshold && t->threshold < ttest->threshold)) {
-                        t = ttest;
-                }
-        }
-        if (t) {
-                set_led(ALERT_OFFSET + alert_id, t->red, t->green, t->blue);
-                set_flash_config(ALERT_OFFSET + alert_id, t->flash_hz);
-        }
 }
 
 void api_set_current_alert_value(CANRxFrame *rx_msg)
@@ -315,126 +449,6 @@ void api_set_linear_threshold(CANRxFrame *rx_msg)
         t->flash_hz = flash;
         log_trace(_LOG_PFX "Set Linear Graph Threshold : threshold_id(%i) threshold(%i) rgb(%i, %i, %i) flash(%i)\r\n",
                     threshold_id, threshold, red, green, blue, flash);
-}
-
-static struct LinearGraphThreshold * _select_linear_threshold(uint16_t value)
-{
-        size_t i;
-        struct LinearGraphThreshold  * t = NULL;
-        for (i = 0; i < LINEAR_GRAPH_THRESHOLDS; i++) {
-                struct LinearGraphThreshold  * ttest = &g_linear_graph_threshold[i];
-                if (t == NULL || (value > ttest->threshold && t->threshold < ttest->threshold)) {
-                        t = ttest;
-                }
-        }
-        return t;
-}
-
-static void _update_linear_graph(uint16_t value, uint16_t range, struct LinearGraphThreshold * threshold, uint8_t graph_size, uint8_t start_offset, enum linear_style lstyle, bool left_right)
-{
-        uint8_t graph_length = 0;
-
-        if (lstyle == LINEAR_STYLE_STEPPED) {
-                graph_length = threshold->segment_length;
-        }
-        else {
-                /* percentage of range */
-                uint32_t pct = (value * 100) / range;
-                graph_length = (graph_size * pct) / 100;
-        }
-
-        /* rail to max number of LEDs, for safety */
-        graph_length = graph_length > graph_size ? graph_size : graph_length;
-
-        uint32_t red = threshold->red;
-        uint32_t green = threshold->green;
-        uint32_t blue = threshold->blue;
-        uint8_t flash = threshold->flash_hz;
-
-        size_t i;
-        uint8_t led_index = 0;
-        for (i = 0; i < graph_size; i++) {
-                if (left_right) {
-                        led_index = start_offset + i;
-                }
-                else {
-                        led_index = (start_offset + graph_size - 1) - i;
-                }
-
-                if (i < graph_length) {
-                        set_led(led_index, red, green, blue);
-                }
-                else {
-                        set_led(led_index, 0, 0, 0);
-                }
-                set_flash_config(led_index, flash);
-        }
-        /* linerally dim the next LED based on the fractional amount */
-        if (lstyle == LINEAR_STYLE_SMOOTH && graph_length < graph_size) {
-                uint32_t pct = (value * 100) / range;
-                uint32_t remainder = (graph_size * pct) % 100;
-                red = red * remainder / 100;
-                green = green * remainder / 100;
-                blue = blue * remainder / 100;
-                led_index = (left_right) ?
-                        start_offset + graph_length :
-                        (start_offset + graph_size - 1) - graph_length;
-                set_led(led_index, red, green, blue);
-                set_flash_config(led_index, flash);
-        }
-}
-
-static void _update_center_graph(uint16_t value, uint16_t range, struct LinearGraphThreshold * threshold, enum linear_style lstyle)
-{
-        /* assuming odd number of LEDs */
-        uint8_t center_led = (LINEAR_GRAPH_COUNT / 2);
-        uint8_t graph_count = center_led + 1;
-        uint32_t center_value = range / 2;
-
-        size_t index;
-
-        if (value > center_value){ /* left to right rendering */
-                /*turn off LEDs left of center */
-                for (index = 0; index < center_led; index++) {
-                        set_led(index, 0, 0, 0);
-                }
-                _update_linear_graph(value - center_value, range / 2, threshold, graph_count, center_led, lstyle, true);
-        }
-        else { /* right to left rendering */
-                /* turn off LEDs right of center */
-                for (index = center_led; index < LINEAR_GRAPH_COUNT; index++) {
-                        set_led(index, 0, 0, 0);
-                }
-                _update_linear_graph(center_value - value, range / 2, threshold, graph_count, 0, lstyle, false);
-        }
-}
-
-static void _update_linear_graph_value(void)
-{
-        uint32_t low_range = g_linear_graph_config.low_range;
-        uint32_t high_range = g_linear_graph_config.high_range;
-        uint32_t range = high_range - low_range;
-
-        uint16_t current_value = g_current_linear_graph_value;
-        /* offset to zero */
-        current_value -= low_range;
-
-        enum linear_style lstyle = g_linear_graph_config.linear_style;
-        enum render_style rstyle = g_linear_graph_config.render_style;
-        bool left_right = rstyle == RENDER_STYLE_LEFT_RIGHT;
-        struct LinearGraphThreshold * threshold = _select_linear_threshold(current_value);
-        switch (rstyle){
-        case RENDER_STYLE_CENTER:
-                _update_center_graph(current_value, range, threshold, lstyle);
-                break;
-        case RENDER_STYLE_LEFT_RIGHT:
-        case RENDER_STYLE_RIGHT_LEFT:
-                _update_linear_graph(current_value, range, threshold, LINEAR_GRAPH_COUNT, LINEAR_GRAPH_OFFSET, lstyle, left_right);
-                break;
-        default:
-                log_info(_LOG_PFX "Invalid render style (%i)\r\n", rstyle);
-                break;
-        }
 }
 
 void api_set_current_linear_graph_value(CANRxFrame *rx_msg)
