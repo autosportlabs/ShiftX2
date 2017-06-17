@@ -57,18 +57,12 @@ static void init_can_gpio(void)
         /* CAN TX.       */
         palSetPadMode(GPIOA, 12, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
 
-
-        /* Disable CAN filtering for now until we can verify proper operation / settings.
-        CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0xB4000, 0x1FFFC000};
-        canSTM32SetFilters(1, 1, &shiftx2_can_filter);
-        */
+        // Disable CAN filtering for now until we can verify proper operation / settings.
+        CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0x000E3700, 0x1FFFFF00}; // g_can_base_address, SHIFTX2_CAN_FILTER_MASK
+  //      canSTM32SetFilters(1, 1, &shiftx2_can_filter);
 
         /* Activates the CAN driver */
         canStart(&CAND1, &cancfg);
-
-        /* Init CAN jumper GPIOs for determining base address offset */
-        palSetPadMode(GPIOA, ADR1_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
-        palSetPadMode(GPIOA, ADR2_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
 }
 
 /*
@@ -76,13 +70,18 @@ static void init_can_gpio(void)
  */
 static void init_can_operating_parameters(void)
 {
+        /* Init CAN jumper GPIOs for determining base address offset */
+        palSetPadMode(GPIOA, ADR1_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+        palSetPadMode(GPIOA, ADR2_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+
         if (palReadPad(GPIOA, 0) == PAL_HIGH) {
                 g_can_base_address += SHIFTX2_CAN_API_RANGE;
         }
-        log_info(_LOG_PFX "CAN base address: %u\r\n", g_can_base_address);
 }
+
 void system_can_init(void)
 {
+        init_can_operating_parameters();
         init_can_gpio();
 }
 
@@ -130,6 +129,7 @@ uint32_t get_can_base_id(void)
 {
         return g_can_base_address;
 }
+
 /* Main worker for receiving CAN messages */
 void can_worker(void)
 {
@@ -139,7 +139,8 @@ void can_worker(void)
         chEvtRegister(&CAND1.rxfull_event, &el, 0);
 
         chThdSleepMilliseconds(CAN_WORKER_STARTUP_DELAY);
-        init_can_operating_parameters();
+        log_info(_LOG_PFX "CAN base address: %u\r\n", g_can_base_address);
+
 
         systime_t last_message = chVTGetSystemTimeX();
 

@@ -61,30 +61,29 @@ struct LinearGraphThreshold {
 };
 
 /* API offsets */
-#define SHIFTX2_CAN_BASE_ID     744389
-#define SHIFTX2_CAN_API_RANGE   1000
-#define SHIFTX2_CAN_FILTER_ID   0xB4000
-#define SHIFTX2_CAN_FILTER_MASK 0x1FFFC000
 
-#define API_ANNOUNCEMENT 0
-#define API_RESET_DEVICE 1
-#define API_STATS 2
-#define API_SET_CONFIG_GROUP_1 3
+#define SHIFTX2_CAN_BASE_ID     0xE3600
+#define SHIFTX2_CAN_API_RANGE   256
+#define SHIFTX2_CAN_FILTER_MASK 0x1FFFFF00
+
+#define API_ANNOUNCEMENT                    0
+#define API_RESET_DEVICE                    1
+#define API_STATS                           2
+#define API_SET_CONFIG_GROUP_1              3
 
 /* Configuration and Runtime */
 /* Direct control messages */
-#define API_SET_DISCRETE_LED 10
+#define API_SET_DISCRETE_LED                10
 
 /* Alert configuration and control messages */
-#define API_SET_ALERT_LED 100
-#define API_SET_ALERT_THRESHOLD 101
-#define API_SET_CURRENT_ALERT_VALUE 102
+#define API_SET_ALERT_LED                   20
+#define API_SET_ALERT_THRESHOLD             21
+#define API_SET_CURRENT_ALERT_VALUE         22
 
 /* Linear graph configuration and control messages */
-#define API_CONFIG_LINEAR_GRAPH 200
-#define API_SET_LINEAR_THRESHOLD 201
-#define API_SET_CURRENT_LINEAR_GRAPH_VALUE 202
-
+#define API_CONFIG_LINEAR_GRAPH             40
+#define API_SET_LINEAR_THRESHOLD            41
+#define API_SET_CURRENT_LINEAR_GRAPH_VALUE  42
 
 void set_brightness(uint8_t brightness);
 uint8_t get_brightness(void);
