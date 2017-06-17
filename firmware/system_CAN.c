@@ -142,6 +142,7 @@ void can_worker(void)
         chThdSleepMilliseconds(CAN_WORKER_STARTUP_DELAY);
         log_info(_LOG_PFX "CAN base address: %u\r\n", g_can_base_address);
 
+        api_send_announcement();
 
         systime_t last_message = chVTGetSystemTimeX();
 
@@ -153,6 +154,7 @@ void can_worker(void)
                 }
 
                 if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(1000)) == 0) {
+                        /* continue to send announcements until we are provisioned */
                         if (!api_is_provisoned())
                                 api_send_announcement();
                         continue;
