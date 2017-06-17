@@ -25,6 +25,7 @@
 #include "hal.h"
 #include "logging.h"
 #include "system_CAN.h"
+#include "shiftx2_api.h"
 
 #define _LOG_PFX "SYS:         "
 
@@ -47,14 +48,15 @@ bool get_system_initialized(void)
 /* Broadcast some current stats */
 void broadcast_stats(void)
 {
-    //CANTxFrame can_stats;
-    //prepare_can_tx_message(&can_stats, CAN_IDE_EXT, STATS_ID);
+    CANTxFrame can_stats;
+    prepare_can_tx_message(&can_stats, CAN_IDE_EXT, get_can_base_id() + API_STATS);
 
-    /* byte 5-7 send version information */
-//    can_stats.data8[5] = MAJOR_VER;
-  //  can_stats.data8[6] = MINOR_VER;
-//    can_stats.data8[7] = PATCH_VER;
-    //canTransmit(&CAND1, CAN_ANY_MAILBOX, &can_stats, MS2ST(CAN_TRANSMIT_TIMEOUT));
+    /* these values reserved for future use */
+    can_stats.data8[0] = MAJOR_VER;
+    can_stats.data8[1] = MINOR_VER;
+    can_stats.data8[2] = PATCH_VER;
+    can_stats.DLC = 3;
+    canTransmit(&CAND1, CAN_ANY_MAILBOX, &can_stats, MS2ST(CAN_TRANSMIT_TIMEOUT));
     log_info(_LOG_PFX "Broadcast stats\r\n");
 }
 
@@ -69,5 +71,5 @@ void reset_system(void)
 /* Check if we're in a state where we need to reset the system */
 void check_system_state(void)
 {
-/* NOOP for now */
+        /* NOOP for now */
 }

@@ -459,6 +459,7 @@ void api_send_announcement(void)
         announce.data8[3] = MAJOR_VER;
         announce.data8[4] = MINOR_VER;
         announce.data8[5] = PATCH_VER;
+        announce.DLC = 6;
         canTransmit(&CAND1, CAN_ANY_MAILBOX, &announce, MS2ST(CAN_TRANSMIT_TIMEOUT));
         log_info(_LOG_PFX "Broadcast announcement\r\n");
 }

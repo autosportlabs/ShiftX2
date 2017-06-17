@@ -68,7 +68,7 @@ struct LinearGraphThreshold {
 
 #define API_ANNOUNCEMENT 0
 #define API_RESET_DEVICE 1
-#define API_STATS SHIFTX2_2
+#define API_STATS 2
 #define API_SET_CONFIG_GROUP_1 3
 
 /* Configuration and Runtime */
