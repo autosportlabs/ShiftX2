@@ -57,12 +57,13 @@ static void init_can_gpio(void)
         /* CAN TX.       */
         palSetPadMode(GPIOA, 12, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
 
-        // Disable CAN filtering for now until we can verify proper operation / settings.
-        CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0x000E3700, 0x1FFFFF00}; // g_can_base_address, SHIFTX2_CAN_FILTER_MASK
-        //      canSTM32SetFilters(1, 1, &shiftx2_can_filter);
-
         /* Activates the CAN driver */
         canStart(&CAND1, &cancfg);
+
+        // Disable CAN filtering for now until we can verify proper operation / settings.
+        CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0x000E3700, 0x1FFFFF00}; // g_can_base_address, SHIFTX2_CAN_FILTER_MASK
+        //canSTM32SetFilters(1, 1, &shiftx2_can_filter);
+
 }
 
 /*
