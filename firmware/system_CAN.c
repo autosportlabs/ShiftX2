@@ -59,7 +59,7 @@ static void init_can_gpio(void)
 
         // Disable CAN filtering for now until we can verify proper operation / settings.
         CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0x000E3700, 0x1FFFFF00}; // g_can_base_address, SHIFTX2_CAN_FILTER_MASK
-  //      canSTM32SetFilters(1, 1, &shiftx2_can_filter);
+        //      canSTM32SetFilters(1, 1, &shiftx2_can_filter);
 
         /* Activates the CAN driver */
         canStart(&CAND1, &cancfg);
@@ -93,32 +93,32 @@ static bool dispatch_can_rx(CANRxFrame *rx_msg)
         int32_t can_id = rx_msg->IDE == CAN_IDE_EXT ? rx_msg->EID : rx_msg->SID;
 
         switch (can_id - g_can_base_address) {
-                case API_SET_CONFIG_GROUP_1:
-                        api_set_config_group_1(rx_msg);
-                        break;
-                case API_SET_DISCRETE_LED:
-                        api_set_discrete_led(rx_msg);
-                        break;
-                case API_SET_ALERT_LED:
-                        api_set_alert_led(rx_msg);
-                        break;
-                case API_SET_ALERT_THRESHOLD:
-                        api_set_alert_threshold(rx_msg);
-                        break;
-                case API_SET_CURRENT_ALERT_VALUE:
-                        api_set_current_alert_value(rx_msg);
-                        break;
-                case API_CONFIG_LINEAR_GRAPH:
-                        api_config_linear_graph(rx_msg);
-                        break;
-                case API_SET_LINEAR_THRESHOLD:
-                        api_set_linear_threshold(rx_msg);
-                        break;
-                case API_SET_CURRENT_LINEAR_GRAPH_VALUE:
-                        api_set_current_linear_graph_value(rx_msg);
-                        break;
-                default:
-                    return false;
+        case API_SET_CONFIG_GROUP_1:
+                api_set_config_group_1(rx_msg);
+                break;
+        case API_SET_DISCRETE_LED:
+                api_set_discrete_led(rx_msg);
+                break;
+        case API_SET_ALERT_LED:
+                api_set_alert_led(rx_msg);
+                break;
+        case API_SET_ALERT_THRESHOLD:
+                api_set_alert_threshold(rx_msg);
+                break;
+        case API_SET_CURRENT_ALERT_VALUE:
+                api_set_current_alert_value(rx_msg);
+                break;
+        case API_CONFIG_LINEAR_GRAPH:
+                api_config_linear_graph(rx_msg);
+                break;
+        case API_SET_LINEAR_THRESHOLD:
+                api_set_linear_threshold(rx_msg);
+                break;
+        case API_SET_CURRENT_LINEAR_GRAPH_VALUE:
+                api_set_current_linear_graph_value(rx_msg);
+                break;
+        default:
+                return false;
         }
         /* if we get any message then we've been provisioned */
         set_api_is_provisioned(true);
@@ -146,12 +146,12 @@ void can_worker(void)
 
         while(!chThdShouldTerminateX()) {
                 /* check if we've timed out after we've been active */
-                if (api_is_provisoned() && chVTTimeElapsedSinceX(last_message) > MS2ST(NO_ACTIVITY_TIMEOUT)){
+                if (api_is_provisoned() && chVTTimeElapsedSinceX(last_message) > MS2ST(NO_ACTIVITY_TIMEOUT)) {
                         log_info(_LOG_PFX "No activity after %u ms, resetting system\r\n", NO_ACTIVITY_TIMEOUT);
                         reset_system();
                 }
 
-                if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(1000)) == 0){
+                if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(1000)) == 0) {
                         if (!api_is_provisoned())
                                 api_send_announcement();
                         continue;
@@ -172,9 +172,9 @@ void prepare_can_tx_message(CANTxFrame *tx_frame, uint8_t can_id_type, uint32_t 
 {
         tx_frame->IDE = can_id_type;
         if (can_id_type == CAN_IDE_EXT) {
-            tx_frame->EID = can_id;
+                tx_frame->EID = can_id;
         } else {
-            tx_frame->SID = can_id;
+                tx_frame->SID = can_id;
         }
         tx_frame->RTR = CAN_RTR_DATA;
         tx_frame->DLC = 8;

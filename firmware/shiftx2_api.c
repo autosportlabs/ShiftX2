@@ -26,11 +26,11 @@ static bool g_provisioned = false;
 
 static void _set_led_multi(size_t index, size_t length, uint8_t red, uint8_t green, uint8_t blue, uint8_t flash)
 {
-    size_t i;
-    for (i = 0; i < length; i++){
-            set_led(index + i, red, green, blue);
-            set_flash_config(index + i, flash);
-    }
+        size_t i;
+        for (i = 0; i < length; i++) {
+                set_led(index + i, red, green, blue);
+                set_flash_config(index + i, flash);
+        }
 }
 
 static void _update_alert_value(uint8_t alert_id)
@@ -64,7 +64,7 @@ static struct LinearGraphThreshold * _select_linear_threshold(uint16_t value)
                 struct LinearGraphThreshold  * ttest = &g_linear_graph_threshold[i];
                 if (value >= ttest->threshold && (ttest->threshold > 0 || i == 0)) {
                         t = ttest;
-               }
+                }
         }
         return t;
 }
@@ -75,8 +75,7 @@ static void _update_linear_graph(uint16_t value, uint16_t range, struct LinearGr
 
         if (lstyle == LINEAR_STYLE_STEPPED) {
                 graph_length = threshold->segment_length;
-        }
-        else {
+        } else {
                 /* percentage of range */
                 uint32_t pct = (value * 100) / range;
                 graph_length = (graph_size * pct) / 100;
@@ -95,15 +94,13 @@ static void _update_linear_graph(uint16_t value, uint16_t range, struct LinearGr
         for (i = 0; i < graph_size; i++) {
                 if (left_right) {
                         led_index = start_offset + i;
-                }
-                else {
+                } else {
                         led_index = (start_offset + graph_size - 1) - i;
                 }
 
                 if (i < graph_length) {
                         set_led(led_index, red, green, blue);
-                }
-                else {
+                } else {
                         set_led(led_index, 0, 0, 0);
                 }
                 set_flash_config(led_index, flash);
@@ -116,8 +113,8 @@ static void _update_linear_graph(uint16_t value, uint16_t range, struct LinearGr
                 green = green * remainder / 100;
                 blue = blue * remainder / 100;
                 led_index = (left_right) ?
-                        start_offset + graph_length :
-                        (start_offset + graph_size - 1) - graph_length;
+                            start_offset + graph_length :
+                            (start_offset + graph_size - 1) - graph_length;
                 set_led(led_index, red, green, blue);
                 set_flash_config(led_index, flash);
         }
@@ -132,14 +129,13 @@ static void _update_center_graph(uint16_t value, uint16_t range, struct LinearGr
 
         size_t index;
 
-        if (value > center_value){ /* left to right rendering */
+        if (value > center_value) { /* left to right rendering */
                 /*turn off LEDs left of center */
                 for (index = 0; index < center_led; index++) {
                         set_led(index, 0, 0, 0);
                 }
                 _update_linear_graph(value - center_value, range / 2, threshold, graph_count, center_led, lstyle, true);
-        }
-        else { /* right to left rendering */
+        } else { /* right to left rendering */
                 /* turn off LEDs right of center */
                 for (index = center_led; index < LINEAR_GRAPH_COUNT; index++) {
                         set_led(index, 0, 0, 0);
@@ -167,7 +163,7 @@ static void _update_linear_graph_value(void)
                 _set_led_multi(LINEAR_GRAPH_OFFSET, LINEAR_GRAPH_COUNT, 0, 0, 0, 0);
                 return;
         }
-        switch (rstyle){
+        switch (rstyle) {
         case RENDER_STYLE_CENTER:
                 _update_center_graph(current_value, range, threshold, lstyle);
                 break;
@@ -357,7 +353,7 @@ void api_set_alert_threshold(CANRxFrame *rx_msg)
         t->blue = blue;
         t->flash_hz = flash;
         log_trace(_LOG_PFX "Set Alert Threshold : alert_id(%i) threshold_id(%i) threshold(%i) rgb(%i, %i, %i) flash(%i)\r\n",
-                    alert_id, threshold_id, threshold, red, green, blue, flash);
+                  alert_id, threshold_id, threshold, red, green, blue, flash);
 }
 
 void api_set_current_alert_value(CANRxFrame *rx_msg)
@@ -448,14 +444,14 @@ void api_set_linear_threshold(CANRxFrame *rx_msg)
         t->blue = blue;
         t->flash_hz = flash;
         log_trace(_LOG_PFX "Set Linear Graph Threshold : threshold_id(%i) threshold(%i) rgb(%i, %i, %i) flash(%i)\r\n",
-                    threshold_id, threshold, red, green, blue, flash);
+                  threshold_id, threshold, red, green, blue, flash);
 }
 
 void api_set_current_linear_graph_value(CANRxFrame *rx_msg)
 {
         if (rx_msg->DLC < 2) {
-            log_info(_LOG_PFX "Invalid param count for set current linear graph value\r\n");
-            return;
+                log_info(_LOG_PFX "Invalid param count for set current linear graph value\r\n");
+                return;
         }
 
         uint16_t current_value = rx_msg->data16[0];
