@@ -37,7 +37,7 @@
 #define MAIN_THREAD_SLEEP_FINE_MS   1000
 #define MAIN_THREAD_CHECK_INTERVAL_MS 100
 #define WATCHDOG_TIMEOUT 11000
-#define WATCHDOG_ENABLED false
+#define WATCHDOG_ENABLED true
 
 /*
  * CAN receiver thread.
@@ -71,6 +71,12 @@ static THD_FUNCTION(startup_demo_work, arg) {
     startup_demo_worker();
 }
 
+static const WDGConfig wdgcfg = {
+  STM32_IWDG_PR_64,
+  STM32_IWDG_RL(1000),
+  STM32_IWDG_WIN_DISABLED
+};
+
 /* Watchdog configuration and initialization
  */
 static void _start_watchdog(void)
@@ -78,10 +84,6 @@ static void _start_watchdog(void)
     if (! WATCHDOG_ENABLED)
         return;
 
-    const WDGConfig wdgcfg = {
-        STM32_IWDG_PR_4,
-        STM32_IWDG_RL(WATCHDOG_TIMEOUT)
-    };
     wdgStart(&WDGD1, &wdgcfg);
 }
 
