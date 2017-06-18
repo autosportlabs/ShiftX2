@@ -27,6 +27,6 @@
 
 void button_init(void);
 bool button_is_pressed(void);
-bool button_check_broadcast_state(void);
+void button_check_broadcast_state(void);
 
 #endif /* ADC_H_ */

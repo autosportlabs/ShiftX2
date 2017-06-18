@@ -42,7 +42,7 @@ bool button_is_pressed(void)
         return pressed;
 }
 
-bool button_check_broadcast_state(void)
+void button_check_broadcast_state(void)
 {
         bool is_currently_pressed = button_is_pressed();
         if (is_currently_pressed != g_button_is_pressed) {
