@@ -30,19 +30,32 @@
 #define _LOG_PFX "SYS_CAN:     "
 
 #define CAN_WORKER_STARTUP_DELAY 500
-#define ADR1_PORT 0
-#define ADR2_PORT 4
+#define ADR1_ADDRESS_PORT 0
+#define ADR2_BAUD_PORT 4
 static uint32_t g_can_base_address = SHIFTX2_CAN_BASE_ID;
 
 /*
  * 500K baud; 36MHz clock
  */
-static const CANConfig cancfg = {
+static const CANConfig cancfg_500K = {
         CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP | CAN_MCR_NART,
         CAN_BTR_SJW(1) |
         CAN_BTR_TS1(11) | CAN_BTR_TS2(2) | CAN_BTR_BRP(5)
 };
 
+/*
+ * 1M baud; 36MHz clock
+ */
+static const CANConfig cancfg_1MB = {
+        CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP | CAN_MCR_NART,
+        CAN_BTR_SJW(1) |
+        CAN_BTR_TS1(11) | CAN_BTR_TS2(2) | CAN_BTR_BRP(2)
+};
+
+static const CANConfig * _select_can_configuration(void)
+{
+        return palReadPad(GPIOA, ADR2_BAUD_PORT) == PAL_HIGH ? &cancfg_1MB : &cancfg_500K;
+}
 /*
  * Initialize our CAN peripheral
  */
@@ -58,10 +71,10 @@ static void init_can_gpio(void)
         palSetPadMode(GPIOA, 12, PAL_STM32_MODE_ALTERNATE | PAL_STM32_ALTERNATE(4));
 
         /* Activates the CAN driver */
-        canStart(&CAND1, &cancfg);
+        canStart(&CAND1, _select_can_configuration());
 
         // Disable CAN filtering for now until we can verify proper operation / settings.
-        CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0x000E3700, 0x1FFFFF00}; // g_can_base_address, SHIFTX2_CAN_FILTER_MASK
+        // CANFilter shiftx2_can_filter = {1, 0, 1, 0, 0x000E3700, 0x1FFFFF00}; // g_can_base_address, SHIFTX2_CAN_FILTER_MASK
         //canSTM32SetFilters(1, 1, &shiftx2_can_filter);
 
 }
@@ -72,10 +85,10 @@ static void init_can_gpio(void)
 static void init_can_operating_parameters(void)
 {
         /* Init CAN jumper GPIOs for determining base address offset */
-        palSetPadMode(GPIOA, ADR1_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
-        palSetPadMode(GPIOA, ADR2_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+        palSetPadMode(GPIOA, ADR1_ADDRESS_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
+        palSetPadMode(GPIOA, ADR2_BAUD_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
 
-        if (palReadPad(GPIOA, ADR1_PORT) == PAL_HIGH) {
+        if (palReadPad(GPIOA, ADR1_ADDRESS_PORT) == PAL_HIGH) {
                 g_can_base_address += SHIFTX2_CAN_API_RANGE;
         }
 }
