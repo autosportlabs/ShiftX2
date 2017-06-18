@@ -140,6 +140,7 @@ CSRC = $(STARTUPSRC) \
        system_SPI.c \
        main.c \
        system_CAN.c \
+       system_button.c \
        system_ADC.c \
        shiftx2_api.c \
        system_LED.c \

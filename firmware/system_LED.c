@@ -151,6 +151,7 @@ static void larson_scan(uint8_t red, uint8_t green, uint8_t blue)
         }
 }
 
+/* Run Larson Scanner for the duration of the timeout, or until we receive a recognized message */
 void startup_light_show(void)
 {
         chThdSleepMilliseconds(1000);

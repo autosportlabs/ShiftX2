@@ -75,7 +75,7 @@ static void init_can_operating_parameters(void)
         palSetPadMode(GPIOA, ADR1_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
         palSetPadMode(GPIOA, ADR2_PORT, PAL_STM32_MODE_INPUT | PAL_STM32_PUPDR_PULLUP);
 
-        if (palReadPad(GPIOA, 0) == PAL_HIGH) {
+        if (palReadPad(GPIOA, ADR1_PORT) == PAL_HIGH) {
                 g_can_base_address += SHIFTX2_CAN_API_RANGE;
         }
 }

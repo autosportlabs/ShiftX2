@@ -28,6 +28,7 @@
 #include "system_CAN.h"
 #include "system_LED.h"
 #include "system_ADC.h"
+#include "system_button.h"
 
 #define CAN_THREAD_STACK 512
 #define LED_THREAD_STACK 256
@@ -121,13 +122,12 @@ int main(void)
         uint32_t stats_check = 0;
         while (true) {
                 chThdSleepMilliseconds(MAIN_THREAD_CHECK_INTERVAL_MS);
-                enum logging_levels level = get_logging_level();
-                uint32_t stats_threshold = (level == logging_level_trace ? MAIN_THREAD_SLEEP_FINE_MS : MAIN_THREAD_SLEEP_NORMAL_MS);
                 stats_check += MAIN_THREAD_CHECK_INTERVAL_MS;
-                if (stats_check > stats_threshold) {
+                if (stats_check > MAIN_THREAD_SLEEP_NORMAL_MS) {
                         broadcast_stats();
                         stats_check = 0;
                 }
+                button_check_broadcast_state();
                 if (WATCHDOG_ENABLED)
                         wdgReset(&WDGD1);
                 check_system_state();

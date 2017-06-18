@@ -85,6 +85,8 @@ struct LinearGraphThreshold {
 #define API_SET_LINEAR_THRESHOLD            41
 #define API_SET_CURRENT_LINEAR_GRAPH_VALUE  42
 
+#define API_ALERT_BUTTON_STATES             60
+
 void set_brightness(uint8_t brightness);
 uint8_t get_brightness(void);
 struct LedFlashConfig * get_flash_config(size_t index);
