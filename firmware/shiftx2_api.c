@@ -20,7 +20,8 @@ static struct LinearGraphThreshold g_linear_graph_threshold[LINEAR_GRAPH_THRESHO
 
 static uint16_t g_current_linear_graph_value;
 static struct LedFlashConfig g_flash_config[LED_COUNT];
-static uint8_t g_current_brightness;
+
+static struct ConfigGroup1 g_config_group_1 = {DEFAULT_BRIGHTNESS, DEFAULT_LIGHT_SENSOR_SCALING};
 
 static bool g_provisioned = false;
 
@@ -189,7 +190,6 @@ void set_api_is_provisioned(bool provisioned)
 
 void api_initialize(void)
 {
-        set_brightness(APA102_DEFAULT_BRIGHTNESS);
         size_t i;
         /* Init flash configuration */
         for (i = 0; i < LED_COUNT; i++) {
@@ -243,14 +243,24 @@ void api_initialize(void)
         g_linear_graph_threshold[2].flash_hz = 5;
 }
 
-void set_brightness(uint8_t brightness)
+static void _set_brightness(uint8_t brightness)
 {
-        g_current_brightness = brightness;
+        g_config_group_1.brightness = brightness;
 }
 
 uint8_t get_brightness(void)
 {
-        return g_current_brightness;
+        return g_config_group_1.brightness;
+}
+
+static void _set_light_sensor_scaling(uint8_t scaling)
+{
+    g_config_group_1.light_sensor_scaling = scaling;
+}
+
+uint8_t get_light_sensor_scaling(void)
+{
+    return g_config_group_1.light_sensor_scaling;
 }
 
 struct LedFlashConfig * get_flash_config(size_t led_index)
@@ -269,11 +279,19 @@ void api_set_config_group_1(CANRxFrame *rx_msg)
                 log_info(_LOG_PFX "Invalid params for set config group 1\r\n");
                 return;
         }
-        uint8_t brightness = rx_msg->data8[0];
+        uint32_t brightness = rx_msg->data8[0];
+        /* scale percentage to internal APA102 brightness factor and rail to limits */
+        brightness = APA102_MAX_BRIGHTNESS * brightness / 100;
         brightness = brightness > APA102_MAX_BRIGHTNESS ? APA102_MAX_BRIGHTNESS : brightness;
 
-        set_brightness(brightness);
+        _set_brightness(brightness);
         log_trace(_LOG_PFX "Set config group 1 : brightness(%i)\r\n", brightness);
+
+        if (rx_msg->DLC >= 2) {
+                uint8_t scaling = rx_msg->data8[1];
+                _set_light_sensor_scaling(scaling);
+                log_trace(_LOG_PFX "Set config group 1: light sensor scaling: %i\r\n", scaling);
+        }
 }
 
 void api_set_discrete_led(CANRxFrame *rx_msg)

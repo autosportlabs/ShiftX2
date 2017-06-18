@@ -60,8 +60,15 @@ struct LinearGraphThreshold {
         uint8_t flash_hz;
 };
 
-/* API offsets */
+#define DEFAULT_BRIGHTNESS              0
+#define DEFAULT_LIGHT_SENSOR_SCALING    51
 
+struct ConfigGroup1 {
+        uint8_t brightness;
+        uint8_t light_sensor_scaling;
+};
+
+/* API offsets */
 #define SHIFTX2_CAN_BASE_ID     0xE3600
 #define SHIFTX2_CAN_API_RANGE   256
 #define SHIFTX2_CAN_FILTER_MASK 0x1FFFFF00
@@ -87,8 +94,10 @@ struct LinearGraphThreshold {
 
 #define API_ALERT_BUTTON_STATES             60
 
-void set_brightness(uint8_t brightness);
 uint8_t get_brightness(void);
+
+uint8_t get_light_sensor_scaling(void);
+
 struct LedFlashConfig * get_flash_config(size_t index);
 void set_flash_config(size_t led_index, uint8_t flash_hz);
 

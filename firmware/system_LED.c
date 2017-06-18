@@ -82,13 +82,15 @@ void led_worker(void)
         }
 }
 
-uint16_t _calculate_auto_brightness(void)
+uint8_t _calculate_auto_brightness(void)
 {
-        uint16_t brightness = system_adc_sample();
-        brightness = brightness * BRIGHTNESS_SCALING / 100;
+        uint16_t light_sensor = system_adc_sample();
+        uint8_t scaling = get_light_sensor_scaling();
+        uint16_t brightness = light_sensor * scaling / 100;
         brightness = brightness > APA102_MAX_BRIGHTNESS ? APA102_MAX_BRIGHTNESS : brightness;
         brightness = brightness < APA102_MIN_BRIGHTNESS ? APA102_MIN_BRIGHTNESS : brightness;
-        return brightness;
+        log_trace(_LOG_PFX "Auto brightness: Sensor ADC/scaling/brightness %d/%d/%d", light_sensor, scaling, brightness);
+        return (uint8_t)brightness;
 }
 
 /* Main worker for receiving CAN messages */

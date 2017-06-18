@@ -52,9 +52,6 @@
 #define TXBUF_LEN APA102_START_FRAME_BYTES + APA102_LED_DATA_BYTES + APA102_END_FRAME_BYTES
 #define APA102_DEFAULT_BRIGHTNESS 0
 
-/* scaling factor for photocell ADC conversion. */
-#define BRIGHTNESS_SCALING 51
-
 void set_led(size_t index, uint8_t red, uint8_t green, uint8_t blue);
 void set_led_brightness(size_t index, uint8_t brightness);
 
