@@ -105,10 +105,11 @@ void system_can_init(void)
 static bool dispatch_can_rx(CANRxFrame *rx_msg)
 {
         int32_t can_id = rx_msg->IDE == CAN_IDE_EXT ? rx_msg->EID : rx_msg->SID;
-
+        bool got_config_message = false;
         switch (can_id - g_can_base_address) {
         case API_SET_CONFIG_GROUP_1:
                 api_set_config_group_1(rx_msg);
+                got_config_message = true;
                 break;
         case API_SET_DISCRETE_LED:
                 api_set_discrete_led(rx_msg);
@@ -118,15 +119,18 @@ static bool dispatch_can_rx(CANRxFrame *rx_msg)
                 break;
         case API_SET_ALERT_THRESHOLD:
                 api_set_alert_threshold(rx_msg);
+                got_config_message = true;
                 break;
         case API_SET_CURRENT_ALERT_VALUE:
                 api_set_current_alert_value(rx_msg);
                 break;
         case API_CONFIG_LINEAR_GRAPH:
                 api_config_linear_graph(rx_msg);
+                got_config_message = true;
                 break;
         case API_SET_LINEAR_THRESHOLD:
                 api_set_linear_threshold(rx_msg);
+                got_config_message = true;
                 break;
         case API_SET_CURRENT_LINEAR_GRAPH_VALUE:
                 api_set_current_linear_graph_value(rx_msg);
@@ -134,8 +138,8 @@ static bool dispatch_can_rx(CANRxFrame *rx_msg)
         default:
                 return false;
         }
-        /* if we get any message then we've been provisioned */
-        set_api_is_provisioned(true);
+        /* if we received a configuration message then we are provisioned */
+        set_api_is_provisioned(got_config_message);
         return true;
 }
 
