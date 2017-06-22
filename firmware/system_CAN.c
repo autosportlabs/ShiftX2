@@ -139,7 +139,8 @@ static bool dispatch_can_rx(CANRxFrame *rx_msg)
                 return false;
         }
         /* if we received a configuration message then we are provisioned */
-        set_api_is_provisioned(got_config_message);
+        if (got_config_message)
+                set_api_is_provisioned(got_config_message);
         return true;
 }
 
