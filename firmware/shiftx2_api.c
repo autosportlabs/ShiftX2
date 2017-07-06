@@ -302,10 +302,11 @@ void api_set_discrete_led(CANRxFrame *rx_msg)
         }
         /* data validation on LED index */
         uint8_t index = rx_msg->data8[0];
-        index = index < LED_COUNT ? index : LED_COUNT;
+        index = index < LED_COUNT ? index : LED_COUNT - 1;
 
         /* perform data validation on LED count */
         uint8_t length = rx_msg->data8[1];
+        length = length == 0 ? LED_COUNT : length;
         length = length <= LED_COUNT - index ? length : LED_COUNT - index;
 
         uint8_t red =  rx_msg->data8[2];
