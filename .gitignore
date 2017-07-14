@@ -1,3 +1,6 @@
+firmware/build
+.dep
+
 # Object files
 *.o
 *.ko
