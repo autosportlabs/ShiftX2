@@ -28,7 +28,7 @@ Flashing firmware is provided by a SWD interface. Pads for a SWD connection are 
 * SWCLK
 * SWDIO
 
-To program new firmware, solder a 0.1" header, and connect the corresponding pins to a compatible SWD programmer, such as the STLink V2. 
+To program new firmware, solder a 0.1" header to these pads, and connect the corresponding signals to a compatible SWD programmer, such as the STLink V2. 
 
 ## CAN termination
 CAN termination is enabled by default. To disable termination, cut the CAN Term jumper on the bottom of ShiftX2.
