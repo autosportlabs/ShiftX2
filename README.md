@@ -21,7 +21,14 @@ White	Ground
 ```
 
 ## Flashing new firmware
-Flashing firmware is provided by a SWD interface. Pads for a SWD connection are provided on the bottom of the board with 0.1" spacing, adequate for soldering a header plug that can be connected to a SWD compatible programmer, such as the STLink V2.
+Flashing firmware is provided by a SWD interface. Pads for a SWD connection are provided on the bottom of the board with 0.1" spacing:
+* 3.3v
+* GND
+* Reset
+* SWCLK
+* SWDIO
+
+To program new firmware, solder a 0.1" header, and connect the corresponding pins to a compatible SWD programmer, such as the STLink V2. 
 
 ## CAN termination
 CAN termination is enabled by default. To disable termination, cut the CAN Term jumper on the bottom of ShiftX2.
