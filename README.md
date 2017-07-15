@@ -1,6 +1,11 @@
 # ShiftX2
 Firmware for ShiftX2 - CAN bus controlled sequential shift light and alarm display module
 
+![alt text](images/shiftX_multi.png?raw=true)
+
+![alt text](images/shiftX2_components.jpg?raw=true)
+
+
 # More information
 Visit http://https://wiki.autosportlabs.com/ShiftX2 for full usage and documentation
 
