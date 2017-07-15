@@ -11,6 +11,21 @@ Visit http://https://wiki.autosportlabs.com/ShiftX2 for full usage and documenta
 
 # Hardware setup 
 
+## Pinout
+```
+Color	Assignment	Notes
+Red	5-12v Power	Connect this to switched ignition power. 0.5A max consumption.
+Black	CAN High	
+Yellow	CAN Low	
+White	Ground	
+```
+
+## Flashing new firmware
+Flashing firmware is provided by a SWD interface. Pads for a SWD connection are provided on the bottom of the board with 0.1" spacing, adequate for soldering a header plug that can be connected to a SWD compatible programmer, such as the STLink V2.
+
+## CAN termination
+CAN termination is enabled by default. To disable termination, cut the CAN Term jumper on the bottom of ShiftX2.
+
 ## CAN default address
 
 ### CAN base ID
